@@ -7,7 +7,6 @@ from users.models import User
 
 class RegisterUser(View):
     def post(self,request):
-
         # 接收请求
         #  验证
         # 处理

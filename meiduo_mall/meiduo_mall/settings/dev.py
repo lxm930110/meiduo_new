@@ -26,11 +26,18 @@ SECRET_KEY = 'erlea&8sbd#14i6212wbby#0bj3tbj+7#8y4_c2w3t-p%@q9*('
 # SECURITY WARNING: don't run with debug turned on in production!
 # 调试模式
 DEBUG = True
-
+# 白名单
 ALLOWED_HOSTS = ['api.meiduo.site',
                  '127.0.0.1',
                  'localhost',
                  'www.meiduo.site']
+# 跨域
+CORS_ORIGIN_WHITELIST = (
+    'http://127.0.0.1:8080',
+    'http://localhost:8080',
+    'http://www.meiduo.site:8080',
+)
+CORS_ALLOW_CREDENTIALS = True  # 允许携带cookie
 
 
 # Application definition
@@ -44,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users',
     'corsheaders',
+    'verifications',
 ]
 # 中间件
 
@@ -159,7 +167,14 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     },
-    "verify_code": {  # 验证码信息: 存到 9 号库
+    "image_code": {  # 验证码信息: 存到 2 号库
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/9",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    },
+    "msg_code": {  # 短信验证码信息: 存到 3 号库
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/9",
         "OPTIONS": {
@@ -215,11 +230,6 @@ LOGGING = {
 AUTH_USER_MODEL = 'users.User'
 
 
-# 跨域
 
-CORS_ORIGIN_WHITELIST = (
-    'http://127.0.0.1:8080',
-    'http://localhost:8080',
-    'http://www.meiduo.site:8080',
-)
-CORS_ALLOW_CREDENTIALS = True  # 允许携带cookie
+
+
