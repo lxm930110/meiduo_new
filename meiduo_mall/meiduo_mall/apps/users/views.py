@@ -67,7 +67,7 @@ class RegisterUserView(View):
         # 响应
         response = JsonResponse({'code': 0, 'errmsg': 'OK'})
 
-        response.set_cookie('username', user.username, max_age=60 * 60 * 24 * 14)
+        response.set_cookie('username', username, max_age=60 * 60 * 24 * 14)
 
         return response
 
@@ -112,9 +112,23 @@ class LoginView(View):
 
         response = JsonResponse({'code':0,'errmsg':'OK'})
 
-        response.set_cookie('username', user.username, max_age=60*60*24*14)
+        response.set_cookie('username', username, max_age=60*60*24*14)
 
         return response
+
+
+class LogoutView(View):
+
+    def delete(self, requset):
+        # 断开会话状态
+        logout(requset)
+        response = JsonResponse({'code':0,'errmsg':'OK'})
+        # 删除保存在cookie里的用户信息
+        response.delete_cookie('username')
+        return response
+
+
+
 
 
 
