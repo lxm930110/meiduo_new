@@ -1,4 +1,4 @@
-from django.contrib.auth import login
+from django.contrib.auth import login,logout,authenticate
 from django.http import JsonResponse
 from django.views import View
 from django_redis import get_redis_connection
@@ -65,7 +65,11 @@ class RegisterUserView(View):
         login(request,user)
 
         # 响应
-        return JsonResponse({'code': 0, 'errmsg': 'ok'})
+        response = JsonResponse({'code': 0, 'errmsg': 'OK'})
+
+        response.set_cookie('username', user.username, max_age=60 * 60 * 24 * 14)
+
+        return response
 
 
 class UserNameView(View):
@@ -86,5 +90,32 @@ class MobileView(View):
         except Exception as e:
             return JsonResponse({'code': 400, 'errmsg': '数据库错误'})
         return JsonResponse({'code': 400, 'errmsg': '数据库错误', 'count': count})
+
+class LoginView(View):
+    def post(self, request):
+        dict = json.loads(request.body.decode())
+        username = dict.get('username')
+        password = dict.get('password')
+        remembered = dict.get('remembered')
+        if not all([username,password,remembered]):
+            return JsonResponse({'code':400,'errmsg':'参数不完整'})
+        user = authenticate(request,username=username,password=password)
+        if user is None:
+            return JsonResponse({'code':'400','errmsg':'用户名或者密码不正确'})
+        login(request, user)
+
+        if remembered != True:
+
+            request.session.set_expiry(0)
+        else:
+            request.session.set_expiry(None)
+
+        response = JsonResponse({'code':0,'errmsg':'OK'})
+
+        response.set_cookie('username', user.username, max_age=60*60*24*14)
+
+        return response
+
+
 
 

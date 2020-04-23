@@ -101,10 +101,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql', # 数据库引擎
         'HOST': '127.0.0.1', # 数据库主机
-        'PORT': 3306, # 数据库端口
-        'USER': 'root', # 数据库用户名
-        'PASSWORD': 'mysql', # 数据库用户密码
-        'NAME': 'meiduo_mall' # 数据库名字
+        'PORT': 3306,  # 数据库端口
+        'USER': 'lxm',  # 数据库用户名
+        'PASSWORD': '123123',  # 数据库用户密码
+        'NAME': 'meiduo_mall'  # 数据库名字
     },
 }
 
@@ -228,6 +228,9 @@ LOGGING = {
 
 # 指定本项目使用我们自定义的模型类:
 AUTH_USER_MODEL = 'users.User'
+
+# 指定自定义的用户认证后端:
+AUTHENTICATION_BACKENDS = ['meiduo_mall.utils.authenticate.MeiduoModelBackend']
 
 
 
