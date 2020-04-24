@@ -233,6 +233,10 @@ AUTH_USER_MODEL = 'users.User'
 AUTHENTICATION_BACKENDS = ['meiduo_mall.utils.authenticate.MeiduoModelBackend']
 
 
+# 指定登录视图URL地址
+# LOGIN_URL = '/login/'
+
+
 
 
 

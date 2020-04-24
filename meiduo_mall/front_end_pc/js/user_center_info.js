@@ -72,6 +72,7 @@ var vm = new Vue({
                 .catch(error => {
                     this.set_email = false
                     location.href = 'login.html'
+                    // location.href = 'login.html/?next=/info.html'
                 })
         },
         // 保存email

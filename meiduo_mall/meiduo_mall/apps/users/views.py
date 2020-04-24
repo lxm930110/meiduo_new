@@ -1,14 +1,16 @@
-from django.contrib.auth import login,logout,authenticate
+from django.contrib.auth import login, logout, authenticate
 from django.http import JsonResponse
 from django.views import View
 from django_redis import get_redis_connection
 import re
 from users.models import User
 import json
+from meiduo_mall.utils.info import InfoMixin
+from django.shortcuts import redirect
 
 
 class RegisterUserView(View):
-    def post(self,request):
+    def post(self, request):
         # 接收请求
         dict = json.loads(request.body.decode())
         username = dict.get('username')
@@ -20,25 +22,25 @@ class RegisterUserView(View):
 
         # 验证参数完整性
         if not all([username, password, password2, mobile, allow, msg_code_sro]):
-            return JsonResponse({'code': 400,'errmsg': '参数不完整'})
+            return JsonResponse({'code': 400, 'errmsg': '参数不完整'})
 
         # 用户名验证
         if not re.match(r'^[a-zA-Z0-9_-]{5,20}$', username):
-            return JsonResponse({'code': 400,'errmsg': 'username格式有误'})
+            return JsonResponse({'code': 400, 'errmsg': 'username格式有误'})
 
         # 密码验证
         if not re.match(r'^[a-zA-Z0-9]{8,20}$', password):
-            return JsonResponse({'code': 400,'errmsg': 'password格式有误'})
+            return JsonResponse({'code': 400, 'errmsg': 'password格式有误'})
 
         # 确认密码不一致性
         if password != password2:
-            return JsonResponse({'code': 400,'errmsg': '密码不一致性'})
+            return JsonResponse({'code': 400, 'errmsg': '密码不一致性'})
         # 手机号验证
         if not re.match(r'^1[3-9]\d{9}$', mobile):
-            return JsonResponse({'code': 400,'errmsg': '手机格式有误'})
+            return JsonResponse({'code': 400, 'errmsg': '手机格式有误'})
         # allow验证
         if allow != True:
-            return JsonResponse({'code': 400,'errmsg': 'allow格式有误'})
+            return JsonResponse({'code': 400, 'errmsg': 'allow格式有误'})
 
         # 短信验证 (链接redis)
         msg_redis_cli = get_redis_connection('msg_code')
@@ -62,7 +64,7 @@ class RegisterUserView(View):
         except Exception as e:
             return JsonResponse({'code': 400, 'errmsg': '保存到数据库出错'})
         # 保持会话状态
-        login(request,user)
+        login(request, user)
 
         # 响应
         response = JsonResponse({'code': 0, 'errmsg': 'OK'})
@@ -91,17 +93,18 @@ class MobileView(View):
             return JsonResponse({'code': 400, 'errmsg': '数据库错误'})
         return JsonResponse({'code': 400, 'errmsg': '数据库错误', 'count': count})
 
+
 class LoginView(View):
     def post(self, request):
         dict = json.loads(request.body.decode())
         username = dict.get('username')
         password = dict.get('password')
         remembered = dict.get('remembered')
-        if not all([username,password,remembered]):
-            return JsonResponse({'code':400,'errmsg':'参数不完整'})
-        user = authenticate(request,username=username,password=password)
+        if not all([username, password, remembered]):
+            return JsonResponse({'code': 400, 'errmsg': '参数不完整'})
+        user = authenticate(request, username=username, password=password)
         if user is None:
-            return JsonResponse({'code':'400','errmsg':'用户名或者密码不正确'})
+            return JsonResponse({'code': '400', 'errmsg': '用户名或者密码不正确'})
         login(request, user)
 
         if remembered != True:
@@ -110,9 +113,10 @@ class LoginView(View):
         else:
             request.session.set_expiry(None)
 
-        response = JsonResponse({'code':0,'errmsg':'OK'})
+        response = JsonResponse({'code': 0, 'errmsg': 'OK'})
 
-        response.set_cookie('username', username, max_age=60*60*24*14)
+
+        response.set_cookie('username', username, max_age=60 * 60 * 24 * 14)
 
         return response
 
@@ -122,14 +126,25 @@ class LogoutView(View):
     def delete(self, requset):
         # 断开会话状态
         logout(requset)
-        response = JsonResponse({'code':0,'errmsg':'OK'})
+        response = JsonResponse({'code': 0, 'errmsg': 'OK'})
         # 删除保存在cookie里的用户信息
         response.delete_cookie('username')
         return response
 
 
+class UserCenterInfoView(InfoMixin, View):
+    def get(self, request):
+        # pass
+        # pass
+        # this.username = response.data.info_data.username;
+        # this.mobile = response.data.info_data.mobile;
+        # this.email = response.data.info_data.email;
+        # this.email_active = response.data.info_data.email_active;
 
-
-
-
-
+        info_data = {
+            'username': request.user.username,
+            'mobile': request.user.mobile,
+            # 'email': request.user.email,
+            # 'email_active': request.user.email_active,
+        }
+        return JsonResponse({'code': 0, 'errmsg': 'OK', 'info_data': info_data})
