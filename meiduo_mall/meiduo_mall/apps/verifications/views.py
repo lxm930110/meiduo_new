@@ -31,13 +31,18 @@ class MsgCodeView(View):
         print(uuid)
         if not all([sro_image_code, uuid]):
             return JsonResponse({'code': 400, 'errmsg': '查询参数不完整'})
-        # 链接redis
+        # 链接存储短信验证码的redis
         msg_code_cli = get_redis_connection('msg_code')
+
         if msg_code_cli.get(mobile + '_flag'):
             return JsonResponse({'code': 400, 'errmsg': '获取短信验证码过于频繁，请稍后再获取'})
+
         image_code_cli = get_redis_connection('image_code')
+        # 获取存储在redis中的uuid
         image_code = image_code_cli.get(uuid)
+
         print(image_code)
+
         if image_code is None:
             return JsonResponse({'code': 400, 'errmsg': '图形验证码已过期，请点击重新生成验证码'})
         # 验证图形验证码是否一致
@@ -52,10 +57,12 @@ class MsgCodeView(View):
         # 设置管道
         msg_code_line = msg_code_cli.pipeline()
         # 保存短信验证码到redis中，同时保存一个标记到redis,防止恶意刷新短信验证码
-        msg_code_line.setex(mobile, 60 * 5, msg_code)
+        msg_code_line.setex(mobile, 300, msg_code)
+
         msg_code_line.setex(mobile + '_flag', 60, 1)
         # 提交到redis
         msg_code_line.execute()
         # CCP().send_template_sms('18768469597', [msg_code, 5], 1)
-        ccp_send_sms_code.delay(mobile, msg_code)
+        # ccp_send_sms_code.delay(mobile, msg_code)
+
         return JsonResponse({'code': 200, 'errmsg': 'OK'})

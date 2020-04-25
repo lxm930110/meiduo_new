@@ -38,7 +38,7 @@ var vm = new Vue({
                 if (response.data.code == 0){
                     // 用户已绑定
                     var state = this.get_query_string('state');
-                    location.href = 'http://www.meiduo.site:8080/';
+                    location.href = 'http://www.meiduo.site:8080/index.html';
                 } else {
                     // 用户未绑定
                     this.access_token = response.data.access_token;

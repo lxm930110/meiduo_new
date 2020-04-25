@@ -105,6 +105,7 @@ class LoginView(View):
         user = authenticate(request, username=username, password=password)
         if user is None:
             return JsonResponse({'code': '400', 'errmsg': '用户名或者密码不正确'})
+        # 状态保持
         login(request, user)
 
         if remembered != True:

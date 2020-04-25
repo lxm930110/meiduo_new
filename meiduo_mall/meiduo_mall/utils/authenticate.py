@@ -2,6 +2,7 @@
 from django.contrib.auth.backends import ModelBackend
 from users.models import User
 
+
 class MeiduoModelBackend(ModelBackend):
 
     def authenticate(self, request, username=None, password=None, **kwargs):
