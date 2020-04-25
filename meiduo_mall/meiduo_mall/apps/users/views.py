@@ -4,7 +4,8 @@ from django.views import View
 from django_redis import get_redis_connection
 import re
 from users.models import User
-import json
+import json, logging
+logger = logging.getLogger('django')
 from meiduo_mall.utils.info import InfoMixin
 from django.shortcuts import redirect
 
@@ -145,7 +146,29 @@ class UserCenterInfoView(InfoMixin, View):
         info_data = {
             'username': request.user.username,
             'mobile': request.user.mobile,
-            # 'email': request.user.email,
-            # 'email_active': request.user.email_active,
+            'email': request.user.email,
+            'email_active': request.user.email_active,
         }
         return JsonResponse({'code': 0, 'errmsg': 'OK', 'info_data': info_data})
+
+
+class EmailView(View):
+
+    def put(self, request):
+        dict = json.loads(request.body.decode())
+        email = dict.get('email')
+        if not email:
+            return JsonResponse({'code':400, 'errmsg':'email参数不存在'})
+        if not re.match(r'^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', email):
+            return JsonResponse({'code':400, 'errmsg':'email格式错误'})
+        try:
+            request.user.email = email
+            request.user.save()
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': 400, 'errmsg': '保存邮箱错误'})
+        return JsonResponse({'code': 0, 'errmsg': 'OK'})
+
+
+
+

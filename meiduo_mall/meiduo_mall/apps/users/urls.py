@@ -10,4 +10,5 @@ urlpatterns = [
     re_path('^login/$', views.LoginView.as_view()),
     re_path('^logout/$', views.LogoutView.as_view()),
     re_path('^info/$', views.UserCenterInfoView.as_view()),
+    re_path(r'^emails/$', views.EmailView.as_view()),
 ]
