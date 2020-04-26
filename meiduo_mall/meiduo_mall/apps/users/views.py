@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import login, logout, authenticate
 from django.http import JsonResponse
 from django.views import View
@@ -8,6 +9,9 @@ import json, logging
 logger = logging.getLogger('django')
 from meiduo_mall.utils.info import InfoMixin
 from django.shortcuts import redirect
+
+from meiduo_mall.utils.meiduo_signature import dumps,loads
+from celery_tasks.email.tasks import send_verify_email
 
 
 class RegisterUserView(View):
@@ -152,22 +156,53 @@ class UserCenterInfoView(InfoMixin, View):
         return JsonResponse({'code': 0, 'errmsg': 'OK', 'info_data': info_data})
 
 
-class EmailView(View):
+class EmailView(InfoMixin, View):
 
     def put(self, request):
         dict = json.loads(request.body.decode())
         email = dict.get('email')
+        # 判断是否eamil存在
         if not email:
             return JsonResponse({'code':400, 'errmsg':'email参数不存在'})
         if not re.match(r'^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', email):
             return JsonResponse({'code':400, 'errmsg':'email格式错误'})
         try:
+            # 修改用户email信息
             request.user.email = email
             request.user.save()
         except Exception as e:
             logger.error(e)
             return JsonResponse({'code': 400, 'errmsg': '保存邮箱错误'})
+        data = {'user_id': request.user.id}
+        # 对user_id进行加密处理
+        user_msg = dumps(data, 60*60*2)
+        # 字符串拼接加密后的路径
+        verify_url = settings.EMAIL_VERIFY_URL + user_msg
+        # 执行异步发送邮件
+        send_verify_email.delay(email, verify_url)
+
         return JsonResponse({'code': 0, 'errmsg': 'OK'})
+
+class VerifyEmailView(View):
+    def put(self, request):
+        # 获取token
+        token = request.GET.get('token')
+        if not token:
+            return JsonResponse({'code':400, 'errmsg':'参数不存在'})
+        # 解密获取存user_id（dict格式）
+        data_dict = loads(token, 60*60*2)
+        # 在字典中取出user_id
+        user_id = data_dict.get('user_id')
+        try:
+            user = User.objects.get(pk=user_id)
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code':400, 'errmsg':'数据库出错'})
+        # 修改email_active值
+        user.email_active = True
+        user.save()
+        return JsonResponse({'code': 0, 'errmsg': 'OK'})
+
 
 
 
