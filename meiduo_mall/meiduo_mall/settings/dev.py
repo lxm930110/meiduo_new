@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'verifications',
     'oauth',
+    'areas',
 ]
 # 中间件
 
@@ -255,10 +256,11 @@ EMAIL_PORT = 25
 # 下面的内容是可变的, 随后台设置的不同而改变:
 # 发送邮件的邮箱
 EMAIL_HOST_USER = 'liuxm011@163.com'
+# DEFAULT_FROM_EMAIL = 'liuxm011@163.com'
 # 在邮箱中设置的客户端授权密码
 EMAIL_HOST_PASSWORD = 'KBVWVOZTOYGJSJHX'
 # 收件人看到的发件人
-EMAIL_FROM = '习大大<xidada011@163.com>'
+EMAIL_FROM = 'ALLEN<itcast888888@163.com>'
 
 EMAIL_VERIFY_URL = 'http://www.meiduo.site:8080/success_verify_email.html?token='
 
