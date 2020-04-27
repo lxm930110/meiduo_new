@@ -386,3 +386,79 @@ class UpdateAddressView(InfoMixin, View):
 
         # 响应
         return JsonResponse({'code': 0, 'errmsg': '修改地址成功', 'address': address_dict})
+
+    def delete(self, request, address_id):
+        # 删除地址
+        try:
+            address = Address.objects.get(id=address_id)
+            address.is_deleted = True
+            address.save()
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': 400, 'errmsg': '删除地址失败'})
+        # 响应
+        return JsonResponse({'code': 0, 'errmsg': '删除地址成功'})
+
+
+class DefaultAddressView(View):
+    # 设置默认地址
+    def put(self, request, address_id):
+        try:
+            address = Address.objects.get(id=address_id)
+            request.user.default_address_id = address.id
+            request.user.save()
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': 400, 'errmsg': '设置默认地址失败'})
+        return JsonResponse({'code': 0,  'errmsg': '设置默认地址成功'})
+
+
+class UpdateTitleAddressView(View):
+    # 设置地址的标题
+    def put(self, request, address_id):
+        json_dict = json.loads(request.body.decode())
+        title = json_dict.get('title')
+        try:
+            address = Address.objects.get(pk=address_id)
+            address.title = title
+            address.save()
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': 400, 'errmsg': '设置地址标题失败'})
+        # 响应
+        return JsonResponse({'code': 0, 'errmsg': '设置地址标题成功'})
+
+
+class ModifyPasswordView(InfoMixin, View):
+    # 修改密码
+    def put(self, request):
+        # 接收参数
+        dict = json.loads(request.body.decode())
+        old_password = dict.get('old_password')
+        new_password = dict.get('new_password')
+        new_password2 = dict.get('new_password2')
+
+        # 参数集体验证
+        if not all([old_password, new_password, new_password2]):
+           return JsonResponse({'code':400,'errmsg':'缺少参数'})
+
+        result = request.user.check_password(old_password)
+        if not result:
+            return JsonResponse({'code':400,'errmsg':'原密码错误'})
+        if not re.match(r'^[0-9A-Za-z]{8,20}$', new_password):
+            return JsonResponse({'code':400,'errmsg':'密码格式错误'})
+        if new_password != new_password2:
+            return JsonResponse({'code':400,'errmsg':'密码不一致'})
+        # 修改密码
+        try:
+            # 保存新密码并加密
+            request.user.set_password(new_password)
+            request.user.save()
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code':400, 'errmsg':'修改密码失败'})
+        logout(request)
+        response = JsonResponse({'code':0, 'errmsg':'ok'})
+        response.delete_cookie('username')
+        # 响应
+        return response
