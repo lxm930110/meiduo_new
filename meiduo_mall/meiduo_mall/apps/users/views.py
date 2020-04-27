@@ -4,13 +4,14 @@ from django.http import JsonResponse
 from django.views import View
 from django_redis import get_redis_connection
 import re
-from users.models import User
+from users.models import User, Address
 import json, logging
+
 logger = logging.getLogger('django')
 from meiduo_mall.utils.info import InfoMixin
 from django.shortcuts import redirect
 
-from meiduo_mall.utils.meiduo_signature import dumps,loads
+from meiduo_mall.utils.meiduo_signature import dumps, loads
 from celery_tasks.email.tasks import send_verify_email
 
 
@@ -121,7 +122,6 @@ class LoginView(View):
 
         response = JsonResponse({'code': 0, 'errmsg': 'OK'})
 
-
         response.set_cookie('username', username, max_age=60 * 60 * 24 * 14)
 
         return response
@@ -163,9 +163,9 @@ class EmailView(InfoMixin, View):
         email = dict.get('email')
         # 判断是否eamil存在
         if not email:
-            return JsonResponse({'code':400, 'errmsg':'email参数不存在'})
+            return JsonResponse({'code': 400, 'errmsg': 'email参数不存在'})
         if not re.match(r'^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', email):
-            return JsonResponse({'code':400, 'errmsg':'email格式错误'})
+            return JsonResponse({'code': 400, 'errmsg': 'email格式错误'})
         try:
             # 修改用户email信息
             request.user.email = email
@@ -175,7 +175,7 @@ class EmailView(InfoMixin, View):
             return JsonResponse({'code': 400, 'errmsg': '保存邮箱错误'})
         data = {'user_id': request.user.id}
         # 对user_id进行加密处理
-        user_msg = dumps(data, 60*60*2)
+        user_msg = dumps(data, 60 * 60 * 2)
         # 字符串拼接加密后的路径
         verify_url = settings.EMAIL_VERIFY_URL + user_msg
         # 执行异步发送邮件
@@ -183,27 +183,107 @@ class EmailView(InfoMixin, View):
 
         return JsonResponse({'code': 0, 'errmsg': 'OK'})
 
+
 class VerifyEmailView(View):
     def put(self, request):
         # 获取token
         token = request.GET.get('token')
         if not token:
-            return JsonResponse({'code':400, 'errmsg':'参数不存在'})
+            return JsonResponse({'code': 400, 'errmsg': '参数不存在'})
         # 解密获取存user_id（dict格式）
-        data_dict = loads(token, 60*60*2)
+        data_dict = loads(token, 60 * 60 * 2)
         # 在字典中取出user_id
         user_id = data_dict.get('user_id')
         try:
             user = User.objects.get(pk=user_id)
         except Exception as e:
             logger.error(e)
-            return JsonResponse({'code':400, 'errmsg':'数据库出错'})
+            return JsonResponse({'code': 400, 'errmsg': '数据库出错'})
         # 修改email_active值
         user.email_active = True
         user.save()
         return JsonResponse({'code': 0, 'errmsg': 'OK'})
 
 
+class CreateAddressView(InfoMixin, View):
+    # 增加地址
+    def post(self, request):
+        # 获取地址总个数:
+        try:
+            count = Address.objects.filter(user=request.user,
+                                           is_deleted=False).count()
+        except:
+            return JsonResponse({'code': 400,
+                                 'errmsg': '获取地址出错'})
+            # 判断是否超过上限20个
+        if count >= 20:
+            return JsonResponse({'code': 400,
+                                 'errmsg': '超过地址个数上限'})
+        # 接收参数
+        dict = json.loads(request.body.decode())
+        receiver = dict.get('receiver')
+        province_id = dict.get('province_id')
+        city_id = dict.get('city_id')
+        district_id = dict.get('district_id')
+        place = dict.get('place')
+        mobile = dict.get('mobile')
+        tel = dict.get('tel')
+        email = dict.get('email')
 
+        # 集体验证参数
+        if not all([receiver, province_id, city_id, district_id, place, mobile]):
+            return JsonResponse({'code': 400,
+                                 'errmsg': '缺少参数'})
 
+        if not re.match(r'^1[3-9]\d{9}$', mobile):
+            return JsonResponse({'code': 400,
+                                 'errmsg': '手机格式错误'})
+        if tel:
+            if not re.match(r'^(0[0-9]{2,3}-)?([2-9][0-9]{6,7})+(-[0-9]{1,4})?$', tel):
+                return JsonResponse({'code': 400,
+                                     'errmsg': '电话格式错误'})
+        if email:
+            if not re.match(r'^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', email):
+                return JsonResponse({'code': 400,
+                                     'errmsg': '邮箱格式错误'})
+        # 保存地址信息
+        try:
+            address = Address.objects.create(
+                user=request.user,
+                title=receiver,
+                receiver=receiver,
+                province_id=province_id,
+                city_id=city_id,
+                district_id=district_id,
+                place=place,
+                mobile=mobile,
+                tel=tel,
+                email=email
+            )
 
+            # 设置默认地址
+            if not request.user.default_address:
+                request.user.default_address = address
+                request.user.save()
+
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': 400,
+                                 'errmsg': '新增地址失败'})
+        address_dict = {
+            "id": address.id,
+            "title": address.title,
+            "receiver": address.receiver,
+            "province": address.province.name,
+            "city": address.city.name,
+            "district": address.district.name,
+            "place": address.place,
+            "mobile": address.mobile,
+            "tel": address.tel,
+            "email": address.email
+        }
+
+        # 响应保存结果
+        return JsonResponse({'code': 0,
+                             'errmsg': '新增地址成功',
+                             'address': address_dict})

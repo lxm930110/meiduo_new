@@ -260,7 +260,7 @@ EMAIL_HOST_USER = 'liuxm011@163.com'
 # 在邮箱中设置的客户端授权密码
 EMAIL_HOST_PASSWORD = 'KBVWVOZTOYGJSJHX'
 # 收件人看到的发件人
-EMAIL_FROM = 'ALLEN<itcast888888@163.com>'
+EMAIL_FROM = '煤老板<itcast888888@163.com>'
 
 EMAIL_VERIFY_URL = 'http://www.meiduo.site:8080/success_verify_email.html?token='
 
