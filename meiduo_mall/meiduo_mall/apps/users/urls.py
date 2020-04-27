@@ -13,4 +13,6 @@ urlpatterns = [
     re_path(r'^emails/$', views.EmailView.as_view()),
     re_path(r'^emails/verification/$', views.VerifyEmailView.as_view()),
     re_path(r'^addresses/create/$', views.CreateAddressView.as_view()),
+    re_path(r'^addresses/$', views.ShowAddressView.as_view()),
+    re_path(r'^addresses/(?P<address_id>\d+)/$', views.UpdateAddressView.as_view()),
 ]
