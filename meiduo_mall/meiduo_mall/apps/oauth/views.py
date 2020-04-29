@@ -160,3 +160,99 @@ class QQLoginView(View):
                             max_age=3600 * 24 * 14)
 
         return response
+
+
+    # 再写一遍
+
+class QQloginView1(View):
+    def get(self, request):
+        code = request.GET.get('code')
+        if not code:
+            return JsonResponse({'code': 400, 'errmsg': 'code已过期'})
+        oauthqq = OAuthQQ(
+            client_id=settings.QQ_CLIENT_ID,
+            client_secret=settings.QQ_CLIENT_SECRET,
+            redirect_uri=settings.QQ_REDIRECT_URI,)
+        try:
+            token = oauthqq.get_access_token(code)
+            openid = oauthqq.get_open_id(token)
+        except:
+            return JsonResponse({'code': 400, 'errmsg': '获取openid失败'})
+        try:
+            qq_object = OAuthQQUser.objects.get(openid=openid)
+        except:
+            data = {'openid':openid}
+            access_token = dumps(data,60*10)
+            return JsonResponse({'code':'302','errmsg':'OK','access_token':access_token})
+        else:
+            user = qq_object.user
+            login(request, user)
+            response = JsonResponse({'code':0,'errmsg':'OK'})
+            response.set_cookie('username', user.username, max_age=60 * 60 * 24 * 14)
+            return response
+
+
+    def post(self,request):
+        dict = json.loads(request.body.decode())
+        access_token = dict.get('access_token')
+        mobile = dict.get('mobile')
+        password = dict.get('password')
+        msg_code = dict.get('sms_code')
+        if not all([access_token,mobile,password,msg_code]):
+            return JsonResponse({'code': 400, 'errmsg': '参数不完整'})
+
+        # 判断短信验证码是否一致
+        # 创建 redis 链接对
+        redis_conn = get_redis_connection('msg_code')
+
+        # 从 redis 中获取 sms_code 值
+        msg_code_server = redis_conn.get(mobile)
+
+        # 判断是否存在
+        if msg_code_server is None:
+            # 如果没有, 直接返回:
+            return JsonResponse({'code': 400,
+                                 'errmsg': '短信验证码失效'})
+        # 判断验证码是否一致
+        if msg_code != msg_code_server.decode():
+            # 如果不匹配, 则直接返回:
+            return JsonResponse({'code': 400,
+                                 'errmsg': '短信验证码不一致'})
+        dict_openid = dumps(access_token, 60*10)
+        # 获取openis
+        openid = dict_openid.get('openid')
+        if not openid:
+            return JsonResponse({'code': 400,
+                                 'errmsg': 'openid过期'})
+        try:
+            user = User.objects.get(mobile=mobile)
+        except:
+            try:
+                user = User.objects.create_user(mobile,mobile=mobile,
+                                         password=password)
+            except:
+                return JsonResponse({'code': 400,
+                                     'errmsg': '数据库错误'})
+        else:
+            if not user.check_password(password):
+                return JsonResponse({'code': 400,
+                                     'errmsg': '密码错误'})
+        try:
+            OAuthQQUser.objects.create(openid=openid, user=user)
+        except:
+            return JsonResponse({'code': 400,
+                                 'errmsg': '数据库错误'})
+        login(request, user)
+        response = JsonResponse({'code': 0, 'errmsg': 'OK'})
+        response.set_cookie('username', user.username, max_age=60 * 60 * 24 * 14)
+        return response
+
+
+
+
+
+
+
+
+
+

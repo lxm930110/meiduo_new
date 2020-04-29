@@ -16,6 +16,7 @@ from celery_tasks.email.tasks import send_verify_email
 
 
 class RegisterUserView(View):
+
     def post(self, request):
         # 接收请求
         dict = json.loads(request.body.decode())
