@@ -17,14 +17,14 @@ class FastDFSStorage(Storage):
      'group1/M00/00/00/wKhrlF6pqDmEAlBGAAAAAAxJkS4833.jpg', 
      'Status': 'Upload successed.',
       'Local file name': '/home/ubuntu/Desktop/121.jpg',
-       'Uploaded size': '9.00KB', 'Storage IP': '192.168.107.148'}
+       'Uploaded size': '9.00KB', 'Storage IP': '192.168.107.188'}
     '''
 
     def save(self, name, content, max_length=None):
         # 创建客户端对象:
         client = Fdfs_client(settings.FDFS_CLIENT_CONF)
 
-        result = client.upload_appender_by_filename('原文件绝对路劲')
+        result = client.upload_by_buffer(content.read())
 
         if result.get('Status') != 'Upload successed.':
             raise Exception('上传文件到FDFS系统失败')

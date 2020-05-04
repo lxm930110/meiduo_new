@@ -405,6 +405,7 @@ class DefaultAddressView(View):
     # 设置默认地址
     def put(self, request, address_id):
         try:
+
             address = Address.objects.get(id=address_id)
             request.user.default_address_id = address.id
             request.user.save()
