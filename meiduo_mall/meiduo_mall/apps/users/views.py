@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.views import View
 from django_redis import get_redis_connection
 import re
+
+from goods.models import SKU
 from users.models import User, Address
 import json, logging
 
@@ -369,7 +371,7 @@ class UpdateAddressView(InfoMixin, View):
             )
         except Exception as e:
             logger.error(e)
-            return JsonResponse({'code': 400,'errmsg': '修改地址失败'})
+            return JsonResponse({'code': 400, 'errmsg': '修改地址失败'})
 
         address = Address.objects.get(pk=address_id)
         address_dict = {
@@ -412,7 +414,7 @@ class DefaultAddressView(View):
         except Exception as e:
             logger.error(e)
             return JsonResponse({'code': 400, 'errmsg': '设置默认地址失败'})
-        return JsonResponse({'code': 0,  'errmsg': '设置默认地址成功'})
+        return JsonResponse({'code': 0, 'errmsg': '设置默认地址成功'})
 
 
 class UpdateTitleAddressView(View):
@@ -442,15 +444,15 @@ class ModifyPasswordView(InfoMixin, View):
 
         # 参数集体验证
         if not all([old_password, new_password, new_password2]):
-           return JsonResponse({'code':400,'errmsg':'缺少参数'})
+            return JsonResponse({'code': 400, 'errmsg': '缺少参数'})
 
         result = request.user.check_password(old_password)
         if not result:
-            return JsonResponse({'code':400,'errmsg':'原密码错误'})
+            return JsonResponse({'code': 400, 'errmsg': '原密码错误'})
         if not re.match(r'^[0-9A-Za-z]{8,20}$', new_password):
-            return JsonResponse({'code':400,'errmsg':'密码格式错误'})
+            return JsonResponse({'code': 400, 'errmsg': '密码格式错误'})
         if new_password != new_password2:
-            return JsonResponse({'code':400,'errmsg':'密码不一致'})
+            return JsonResponse({'code': 400, 'errmsg': '密码不一致'})
         # 修改密码
         try:
             # 保存新密码并加密
@@ -458,9 +460,47 @@ class ModifyPasswordView(InfoMixin, View):
             request.user.save()
         except Exception as e:
             logger.error(e)
-            return JsonResponse({'code':400, 'errmsg':'修改密码失败'})
+            return JsonResponse({'code': 400, 'errmsg': '修改密码失败'})
         logout(request)
-        response = JsonResponse({'code':0, 'errmsg':'ok'})
+        response = JsonResponse({'code': 0, 'errmsg': 'ok'})
         response.delete_cookie('username')
         # 响应
         return response
+
+
+class BrowseHistory(InfoMixin, View):
+
+    def get(self, request):
+        redis_cli = get_redis_connection('history')
+        skus_id = redis_cli.lrange('history_' + str(request.user.id), 0, -1)
+        list = []
+        for sku_id in skus_id:
+            sku = SKU.objects.get(id=sku_id)
+            list.append({
+                'id': sku.id,
+                'name': sku.name,
+                'default_image_url': sku.default_image_url,
+                'price': sku.price
+            })
+        return JsonResponse({'code': 0,
+                             'errmsg': 'OK',
+                             'skus': list})
+
+    def post(self, request):
+        dic = json.loads(request.body.decode())
+        sku_id = dic.get('sku_id')
+        try:
+            sku = SKU.objects.get(pk=sku_id)
+        except SKU.DoesNotExist:
+            return JsonResponse({'code': 400,
+                                 'errmsg': 'sku_id不存在'})
+        redis_cli = get_redis_connection('history')
+        pip = redis_cli.pipeline()
+        key = str(request.user.id)
+        print(key,type(key))
+        pip.lrem('history_' + key, 0, sku_id)
+        pip.lpush('history_' + key, sku_id)
+        pip.ltrim('history_' + key, 0, 4)
+        pip.execute()
+        return JsonResponse({'code': 0,
+                             'errmsg': 'OK'})
