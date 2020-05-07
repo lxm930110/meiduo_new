@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django_redis import get_redis_connection
 
+from carts.merge_carts_utils import mergey_carts
 from meiduo_mall.utils.meiduo_signature import loads, dumps
 
 from django.views.generic.base import View
@@ -72,6 +73,8 @@ class QQLoginView(View):
             # 状态保持
             login(request, user)
             response = JsonResponse({'code': 0, 'errmsg': 'OK'})
+            # 登录状态保持后合并购物车
+            response = mergey_carts(request, response)
             # 设置cookie,把用户名写入
             response.set_cookie('username', user.username, max_age=60 * 60 * 24 * 14)
             return response
@@ -153,6 +156,8 @@ class QQLoginView(View):
         # 响应:
         response = JsonResponse({'code': 0,
                                  'errmsg': 'ok'})
+        # 登录状态保持后合并购物车
+        response = mergey_carts(request, response)
 
         #  设置用户名写入cookie，
         response.set_cookie('username',

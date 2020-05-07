@@ -16,6 +16,8 @@ from django.shortcuts import redirect
 from meiduo_mall.utils.meiduo_signature import dumps, loads
 from celery_tasks.email.tasks import send_verify_email
 
+from meiduo_mall.apps.carts.merge_carts_utils import mergey_carts
+
 
 class RegisterUserView(View):
 
@@ -124,6 +126,8 @@ class LoginView(View):
             request.session.set_expiry(None)
 
         response = JsonResponse({'code': 0, 'errmsg': 'OK'})
+        # 登录状态保持后合并购物车
+        response = mergey_carts(request,response)
 
         response.set_cookie('username', username, max_age=60 * 60 * 24 * 14)
 
