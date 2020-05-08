@@ -2,8 +2,8 @@ from django import http
 from collections import OrderedDict
 from goods.models import GoodsCategory
 from goods.models import GoodsChannel, SKU
-from goods.models import  SKUImage, SKUSpecification
-from goods.models import  GoodsSpecification, SpecificationOption
+from goods.models import SKUImage, SKUSpecification
+from goods.models import GoodsSpecification, SpecificationOption
 
 
 def get_goods_desc_info(sku_id):
@@ -29,7 +29,9 @@ def get_goods_desc_info(sku_id):
         for spec_temp in spec_temps:
             key.append(spec_temp.option_id)
         dic[tuple(key)]=sku1.id
+
     # 在每个选项上绑定对应的sku_id值
+
     specs = goods.goodsspecification_set.order_by('id')
 
     for index,good_spec in enumerate(specs):

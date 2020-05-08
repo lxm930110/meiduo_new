@@ -19,6 +19,8 @@ def mergey_carts(request, response):
        pip.hincrby('carts_'+key,sku_id,item['count'])
        if item['selected']:
            pip.sadd('selected_'+key,sku_id)
+       else:
+           pip.srem('selected_'+key,sku_id)
     pip.execute()
     response.delete_cookie('carts')
     return response

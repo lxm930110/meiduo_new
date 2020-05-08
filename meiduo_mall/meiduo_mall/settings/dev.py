@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     # 全文检索
     'haystack',
     'carts',
+    'orders',
 ]
 # 中间件
 
