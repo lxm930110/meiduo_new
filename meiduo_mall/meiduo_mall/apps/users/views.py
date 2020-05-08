@@ -82,6 +82,8 @@ class RegisterUserView(View):
 
         response.set_cookie('username', username, max_age=60 * 60 * 24 * 14)
 
+        response = mergey_carts(request, response)
+
         return response
 
 
@@ -127,7 +129,8 @@ class LoginView(View):
 
         response = JsonResponse({'code': 0, 'errmsg': 'OK'})
         # 登录状态保持后合并购物车
-        response = mergey_carts(request,response)
+        response = mergey_carts(request, response)
+
 
         response.set_cookie('username', username, max_age=60 * 60 * 24 * 14)
 
