@@ -18,6 +18,8 @@ from celery_tasks.email.tasks import send_verify_email
 
 from meiduo_mall.apps.carts.merge_carts_utils import mergey_carts
 
+from users.serializers import UserInfoSerializer,UserInfoModelSerializer
+
 
 class RegisterUserView(View):
 
@@ -30,6 +32,15 @@ class RegisterUserView(View):
         mobile = dict.get('mobile')
         allow = dict.get('allow')
         msg_code_sro = dict.get('sms_code')
+
+        seriailzer = UserInfoSerializer(data=dict)
+
+        seriailzer.is_valid(raise_exception=True)
+
+        seriailzer.errors
+
+
+
 
         # 验证参数完整性
         if not all([username, password, password2, mobile, allow, msg_code_sro]):
@@ -156,14 +167,31 @@ class UserCenterInfoView(InfoMixin, View):
         # this.mobile = response.data.info_data.mobile;
         # this.email = response.data.info_data.email;
         # this.email_active = response.data.info_data.email_active;
+        id = request.user.id
+        user = User.objects.get(pk=id)
 
-        info_data = {
-            'username': request.user.username,
-            'mobile': request.user.mobile,
-            'email': request.user.email,
-            'email_active': request.user.email_active,
-        }
-        return JsonResponse({'code': 0, 'errmsg': 'OK', 'info_data': info_data})
+        # serializer = UserInfoSerializer
+        serializer = UserInfoModelSerializer(user)
+
+        serializer.data
+
+        # info_data = {
+        #
+        #     'username': serializer.data['username'],
+        #     'mobile': serializer.data['mobile'],
+        #     'email': serializer.data['email'],
+        #     'email_active': serializer.data['email_active'],
+        #     # 'email': serializer.data.user.email,
+        #     # 'email_active': serializer.data.user.email_active,
+        # }
+
+        # info_data = {
+        #     'username': request.user.username,
+        #     'mobile': request.user.mobile,
+        #     'email': request.user.email,
+        #     'email_active': request.user.email_active,
+        # }
+        return JsonResponse({'code': 0, 'errmsg': 'OK', 'info_data': serializer.data})
 
 
 class EmailView(InfoMixin, View):

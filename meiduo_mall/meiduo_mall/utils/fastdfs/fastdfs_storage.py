@@ -32,5 +32,6 @@ class FastDFSStorage(Storage):
         file_id = result.get('Remote file_id')
 
         return file_id
+
     def url(self, name):
         return settings.FDFS_URL + name
