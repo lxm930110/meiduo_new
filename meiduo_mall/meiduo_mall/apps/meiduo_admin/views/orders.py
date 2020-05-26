@@ -29,9 +29,7 @@ from orders.models import OrderInfo
 # class OrderDetailListAPIView(RetrieveAPIView):
 #     queryset = OrderInfo.objects.all()
 #     serializer_class = OrderDetailModelSerializer
-    # def get_object(self):
-    #
-    #     return OrderInfo.objects.filter(order_id=)
+
 
 
 class OrderReadOnlyModelViewSet(ReadOnlyModelViewSet):

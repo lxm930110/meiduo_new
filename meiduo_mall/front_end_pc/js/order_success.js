@@ -67,12 +67,12 @@ var vm = new Vue({
                         responseType: 'json'
                     })
                     .then(response => {
-                        // 跳转到支付宝支付
-                         if (response.data.code == 1) {
-                            location.href = response.data.alipay_url;
-                        } else {
-                            alert(response.data.errmsg)
-                        }
+                       if (response.data.code == 0){
+                           // 跳转到支付宝支付
+                           location.href = response.data.alipay_url;
+                       } else if (response.data.code == 400) {
+                           alert(response.data.errmsg)
+                       }
                     })
                     .catch(error => {
                         console.log(error);

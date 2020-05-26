@@ -10,12 +10,11 @@ var vm = new Vue({
         payment_amount: 0,
         order_submitting: false, // 正在提交订单标志
         pay_method: 1, // 支付方式,
-        nowsite:'', // 默认地址
+        nowsite:0, // 默认地址
         addresses: []
     },
     mounted: function(){
-        this.username = getCookie('username');
-        this.nowsite = default_address_id;
+        this.username = getCookie('username')
 
         // 获取结算商品信息
         axios.get(this.host+'/orders/settlement/', {

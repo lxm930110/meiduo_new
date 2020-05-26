@@ -9,6 +9,8 @@ from django import http
 from meiduo_mall.utils.breadcrumb import get_breadcrumb
 from haystack.views import SearchView
 
+# from goods.models import GoodsCategory
+# GoodsCategory.objects.filter(parent=None)
 
 class ListView(View):
 

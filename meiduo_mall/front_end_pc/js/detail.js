@@ -53,8 +53,26 @@ var vm = new Vue({
         this.get_cart();
         this.get_hot_goods();
         this.get_comments();
+
+        // this.detail_visit();
     },
     methods: {
+        // 新增记录商品详情的访问量
+        detail_visit(){
+            if (this.category_id) {
+                var url = this.hots + '/detail/visit/' + this.category_id + '/';
+                axios.post(url, {}, {
+                    responseType: 'json',
+                    withCredentials:true,
+                })
+                    .then(response => {
+                        console.log(response.data);
+                    })
+                    .catch(error => {
+                        console.log(error.response);
+                    });
+            }
+        },
          // 退出登录按钮
         logoutfunc: function () {
             var url = this.host + '/logout/';
@@ -136,5 +154,7 @@ var vm = new Vue({
         get_comments: function(){
 
         }
-    }
+
+    },
+
 });
