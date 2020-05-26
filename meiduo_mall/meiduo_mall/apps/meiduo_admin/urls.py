@@ -2,10 +2,13 @@ from django.urls import re_path
 from rest_framework_jwt.views import obtain_jwt_token
 
 from meiduo_admin.views.Channel import GoodsChannelModelViewSet
+from meiduo_admin.views.admin import UserModelViewSet
 from meiduo_admin.views.brand import BrandModelViewSet
 from meiduo_admin.views.image import ImageModelViewSet, SimpleListAPIView
 # from meiduo_admin.views.orders import OrderListAPIView, OrderDetailListAPIView, OrderUpdateAPIView
 from meiduo_admin.views.orders import OrderReadOnlyModelViewSet
+from meiduo_admin.views.permission import PermissionModelViewSet
+from meiduo_admin.views.permissiongroup import GroupModelViewSet
 
 from meiduo_admin.views.sku import GoodsCategory3ListAPIView, GoodsListAPIView, SkuSetView, SpuListAPIView
 
@@ -62,12 +65,17 @@ urlpatterns = [
     # 获取goods/specs/simple列表
     re_path(r'^goods/specs/simple/$', SpecOptionListAPIView.as_view()),
 
-    # order列表
-    # re_path(r'^orders/$', OrderListAPIView.as_view()),
-    # # order详情页
-    # re_path(r'^orders/(?P<pk>\d+)/$', OrderDetailListAPIView.as_view()),
-    # # order修改
-    # re_path(r'^orders/(?P<order_id>\d+)/status/$', OrderUpdateAPIView.as_view()),
+
+    # 获取content_types列表
+    re_path(r'^permission/content_types/$', PermissionModelViewSet.as_view({'get':'content_types'})),
+
+    # 获取permission/simple列表
+    re_path(r'^permission/simple/$', GroupModelViewSet.as_view({'get': 'simple'})),
+
+    # 获取permission/simple列表
+    re_path(r'^permission/groups/simple/$', UserModelViewSet.as_view({'get': 'groups_simple'})),
+
+
 ]
 
 
@@ -78,6 +86,22 @@ router = DefaultRouter()
 
 # 获取图片列表
 router.register('skus/images', ImageModelViewSet, basename='images')
+
+
+# permission
+
+router.register('permission/perms', PermissionModelViewSet, basename='perms')
+
+
+# 获取用户组表列表数据
+
+router.register('permission/groups', GroupModelViewSet, basename='groups')
+
+
+# 获取admin表列表数据
+
+router.register('permission/admins', UserModelViewSet, basename='admins')
+
 
 
 # Specification
@@ -101,9 +125,11 @@ router.register('skus', SkuSetView, basename='skus')
 
 router.register('orders', OrderReadOnlyModelViewSet, basename='orders')
 
+
 # brand
 
 router.register('goods/brands', BrandModelViewSet, basename='brands')
+
 
 # channel
 
@@ -114,7 +140,6 @@ router.register('goods/channels', GoodsChannelModelViewSet, basename='channels')
 # SPU
 
 router.register('goods', SPUModelViewSet, basename='goods')
-
 
 
 
